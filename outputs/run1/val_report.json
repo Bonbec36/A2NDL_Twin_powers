@@ -1,0 +1,29 @@
+{
+  "val_loss": 0.5487765209241346,
+  "val_acc": 0.9318181818181818,
+  "macro_f1": 0.8685451106171147,
+  "per_class_f1": {
+    "0": 0.7619047619041995,
+    "1": 0.8799999999994681,
+    "2": 0.9637305699476766
+  },
+  "confusion_matrix": [
+    [
+      8,
+      1,
+      0
+    ],
+    [
+      1,
+      22,
+      4
+    ],
+    [
+      3,
+      0,
+      93
+    ]
+  ],
+  "best_ckpt": "C:\\Users\\Bonbec\\Documents\\UTT\\ERA01\\AN2DL\\Defi_01\\Model Design & Implementation\\Model Design & Implementation\\AN2DL_Project-20251110T201034Z-1-001\\AN2DL_Project\\outputs\\run1\\best.pt",
+  "num_classes": 3
+}

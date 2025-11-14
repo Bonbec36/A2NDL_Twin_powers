@@ -1,0 +1,84 @@
+Model: PainCNN
+Experiment folder: C:\Users\Bonbec\Documents\UTT\ERA01\AN2DL\Defi_01\Model Design & Implementation\Model Design & Implementation\AN2DL_Project-20251110T201034Z-1-001\AN2DL_Twin_powers\outputs\hp_runs_01\20251114_181024_cnn_lr0.001_bs64_drop0.2_seed43
+Hyperparameters:
+  lr: 0.001
+  batch_size: 64
+  dropout: 0.2
+  seed: 43
+
+Torchinfo summary:
+
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+PainCNN                                  [64, 3]                   --
+├─Sequential: 1-1                        [64, 256, 2]              --
+│    └─Conv1d: 2-1                       [64, 64, 35]              15,680
+│    └─BatchNorm1d: 2-2                  [64, 64, 35]              128
+│    └─ReLU: 2-3                         [64, 64, 35]              --
+│    └─MaxPool1d: 2-4                    [64, 64, 17]              --
+│    └─Conv1d: 2-5                       [64, 128, 17]             57,344
+│    └─BatchNorm1d: 2-6                  [64, 128, 17]             256
+│    └─ReLU: 2-7                         [64, 128, 17]             --
+│    └─MaxPool1d: 2-8                    [64, 128, 8]              --
+│    └─Conv1d: 2-9                       [64, 192, 8]              172,032
+│    └─BatchNorm1d: 2-10                 [64, 192, 8]              384
+│    └─ReLU: 2-11                        [64, 192, 8]              --
+│    └─MaxPool1d: 2-12                   [64, 192, 4]              --
+│    └─Conv1d: 2-13                      [64, 256, 4]              344,064
+│    └─BatchNorm1d: 2-14                 [64, 256, 4]              512
+│    └─ReLU: 2-15                        [64, 256, 4]              --
+│    └─MaxPool1d: 2-16                   [64, 256, 2]              --
+├─AdaptiveAvgPool1d: 1-2                 [64, 256, 1]              --
+├─Sequential: 1-3                        [64, 3]                   --
+│    └─Linear: 2-17                      [64, 128]                 32,896
+│    └─ReLU: 2-18                        [64, 128]                 --
+│    └─Dropout: 2-19                     [64, 128]                 --
+│    └─Linear: 2-20                      [64, 3]                   387
+==========================================================================================
+Total params: 623,683
+Trainable params: 623,683
+Non-trainable params: 0
+Total mult-adds (Units.MEGABYTES): 275.89
+==========================================================================================
+Input size (MB): 0.31
+Forward/backward pass size (MB): 7.21
+Params size (MB): 2.49
+Estimated Total Size (MB): 10.02
+==========================================================================================
+
+Final results:
+{
+  "val_loss": 0.6358368934103937,
+  "val_acc": 0.9393939393939394,
+  "macro_f1": 0.8852207549686542,
+  "per_class_f1": {
+    "0": 0.8235294117647058,
+    "1": 0.8627450980392157,
+    "2": 0.9693877551020408
+  },
+  "confusion_matrix": [
+    [
+      0.7777777777777778,
+      0.1111111111111111,
+      0.1111111111111111
+    ],
+    [
+      0.037037037037037035,
+      0.8148148148148148,
+      0.14814814814814814
+    ],
+    [
+      0.0,
+      0.010416666666666666,
+      0.9895833333333334
+    ]
+  ],
+  "best_ckpt": "C:\\Users\\Bonbec\\Documents\\UTT\\ERA01\\AN2DL\\Defi_01\\Model Design & Implementation\\Model Design & Implementation\\AN2DL_Project-20251110T201034Z-1-001\\AN2DL_Twin_powers\\outputs\\hp_runs_01\\20251114_181024_cnn_lr0.001_bs64_drop0.2_seed43\\best.pt",
+  "params": {
+    "lr": 0.001,
+    "batch_size": 64,
+    "dropout": 0.2,
+    "seed": 43
+  }
+}

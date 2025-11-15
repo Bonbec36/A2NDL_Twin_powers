@@ -1,0 +1,34 @@
+{
+  "val_loss": 0.584080372570139,
+  "val_acc": 0.9015151515151515,
+  "macro_f1": 0.7955977298760804,
+  "per_class_f1": {
+    "0": 0.6363636363636364,
+    "1": 0.7916666666666666,
+    "2": 0.9587628865979382
+  },
+  "confusion_matrix": [
+    [
+      0.7777777777777778,
+      0.1111111111111111,
+      0.1111111111111111
+    ],
+    [
+      0.14814814814814814,
+      0.7037037037037037,
+      0.14814814814814814
+    ],
+    [
+      0.020833333333333332,
+      0.010416666666666666,
+      0.96875
+    ]
+  ],
+  "best_ckpt": "C:\\Users\\Bonbec\\Documents\\UTT\\ERA01\\AN2DL\\Defi_01\\Model Design & Implementation\\Model Design & Implementation\\AN2DL_Project-20251110T201034Z-1-001\\AN2DL_Twin_powers\\outputs\\hp_runs_02\\20251114_184719_cnn_lr0.0001_bs64_drop0.2_seed43\\best.pt",
+  "params": {
+    "lr": 0.0001,
+    "batch_size": 64,
+    "dropout": 0.2,
+    "seed": 43
+  }
+}

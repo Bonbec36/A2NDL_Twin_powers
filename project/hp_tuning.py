@@ -309,8 +309,8 @@ def main():
     parser.add_argument("--label_csv", type=str, default=str(ROOT_DIR / "data" / "pirate_pain_train_labels.csv"))
     parser.add_argument("--features_txt", type=str, default=str(ROOT_DIR / "data" / "features.txt"))
     parser.add_argument("--stats_json", type=str, default=str(ROOT_DIR / "data" / "stats.json"))
-    parser.add_argument("--out_root", type=str, default=str(ROOT_DIR / "outputs" / "hp_runs_01"))
-    parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--out_root", type=str, default=str(ROOT_DIR / "outputs" / "model_runs_base"))
+    parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--normalize", action="store_true")
     args = parser.parse_args()
@@ -342,10 +342,11 @@ def main():
     num_feats = len(feats)
 
     # hyperparameter grid (you can edit)
-    lrs = [1e-3, 3e-4, 1e-4]
-    batch_sizes = [32, 64]
-    dropouts = [0.2, 0.3, 0.4]
-    seeds = [args.seed, args.seed+1]
+    lrs = [1e-3]
+    batch_sizes = [64]
+    dropouts = [0.2]
+    seeds = [args.seed, args.seed+1, args.seed+2, args.seed+3, args.seed+4, 
+             args.seed+5, args.seed+6, args.seed+7, args.seed+8, args.seed+9]
 
     grid = list(product(lrs, batch_sizes, dropouts, seeds))
     print(f"[info] Running {len(grid)} experiments")

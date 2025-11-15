@@ -1,0 +1,34 @@
+{
+  "val_loss": 0.6223638942747405,
+  "val_acc": 0.8636363636363636,
+  "macro_f1": 0.7793884069607108,
+  "per_class_f1": {
+    "0": 0.6956521739130435,
+    "1": 0.7169811320754716,
+    "2": 0.925531914893617
+  },
+  "confusion_matrix": [
+    [
+      0.8888888888888888,
+      0.1111111111111111,
+      0.0
+    ],
+    [
+      0.1111111111111111,
+      0.7037037037037037,
+      0.18518518518518517
+    ],
+    [
+      0.03125,
+      0.0625,
+      0.90625
+    ]
+  ],
+  "best_ckpt": "C:\\Users\\Bonbec\\Documents\\UTT\\ERA01\\AN2DL\\Defi_01\\Model_Design_Implementation\\Model_Design_Implementation\\AN2DL_Project-20251110T201034Z-1-001\\AN2DL_Twin_powers\\outputs\\model_runs_hp_light_A\\20251115_052444_cnn_lr0.0001_bs64_drop0.4_seed43\\best.pt",
+  "params": {
+    "lr": 0.0001,
+    "batch_size": 64,
+    "dropout": 0.4,
+    "seed": 43
+  }
+}

@@ -18,8 +18,9 @@ class PainCNN(nn.Module):
     def __init__(self, in_channels: int, num_classes: int, dropout: float = 0.2):
         super().__init__()
 
-        widths = [64, 128, 192, 256]#]  # channel progression per block
-        ks = 7                        # conv kernel size
+        widths = [64, 128, 192]#[64, 128, 192]#, 192, 256]#]  # channel progression per block
+        #widths = widths[::-1] #inverse the shape
+        ks = 5                        # conv kernel size
         mp = 2                        # maxpool kernel/stride
 
         layers = []
@@ -40,7 +41,7 @@ class PainCNN(nn.Module):
         self.gap = nn.AdaptiveAvgPool1d(1)  # (B, C, T') -> (B, C, 1)
 
         # Classifier head
-        hidden = 128#default : 128
+        hidden = 64#default : 128
         self.head = nn.Sequential(
             nn.Linear(widths[-1], hidden),
             nn.ReLU(inplace=True),

@@ -1,4 +1,3 @@
-# project/hp_tune.py
 # -*- coding: utf-8 -*-
 """
 Hyperparameter tuning script for PainCNN.
@@ -28,6 +27,7 @@ from torchinfo import summary
 import torch
 import torch.nn as nn
 from torch.optim import Adam
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader, Subset
 
 # Project relative import bootstrap (same as train.py)
@@ -143,9 +143,6 @@ def plot_multiclass_auc(y_true, logits, num_classes, out_png:Path):
             auc = roc_auc_score(y_bin[:, c], probs[:, c])
         except Exception:
             auc = float('nan')
-        fpr = None
-        # For plotting ROC curve we need fpr/tpr; but to keep dependencies low
-        # we will only plot AUC bar chart
         plt.bar(c, auc)
     plt.xticks(range(num_classes), [str(i) for i in range(num_classes)])
     plt.ylabel('AUC (one-vs-rest)')
@@ -178,16 +175,14 @@ def run_experiment(cfg, args, PainCNN, TimeSeriesDataset, num_feats, labels_df, 
     counts = np.bincount(labels_np, minlength=num_classes)
     weights = class_weights_from_counts(counts)
     criterion = nn.CrossEntropyLoss(weight=torch.tensor(weights, dtype=torch.float32, device=device))
-
-    # model, optimizer, scheduler
+    # model, optimizer, scheduler (ReduceLROnPlateau)
     model = PainCNN(in_channels=num_feats, num_classes=num_classes, dropout=cfg['dropout']).to(device)
     opt = Adam(model.parameters(), lr=cfg['lr'])
-    sched = None  # keep simple
-
+    sched = ReduceLROnPlateau(opt, mode='max', patience=args.plateau_patience, 
+                              factor=args.lr_factor, min_lr=args.min_lr)
 
     # Infer temporal length T from dataset
     sample_x, _ = ds_full[0]
-
     if sample_x.dim() == 2:  # (T, F)
         T = sample_x.shape[0]
     else:
@@ -200,11 +195,14 @@ def run_experiment(cfg, args, PainCNN, TimeSeriesDataset, num_feats, labels_df, 
         summary_str = f"torchinfo summary failed: {e}"
 
     # training
-    best_val_acc = -1.0
+    best_val_loss = float("inf")
     best_ckpt = out_dir / "best.pt"
     curve_csv = out_dir / "train_curve.csv"
-    with open(curve_csv, "w", newline="", encoding="utf-8") as f:
+    with curve_csv.open("w", newline="", encoding="utf-8") as f:
         csv.writer(f).writerow(["epoch", "train_loss", "train_acc", "val_loss", "val_acc"])
+
+    epochs_no_improve = 0
+    best_epoch = 0
 
     for epoch in range(1, args.epochs + 1):
         model.train()
@@ -239,18 +237,34 @@ def run_experiment(cfg, args, PainCNN, TimeSeriesDataset, num_feats, labels_df, 
 
         val_loss, val_acc, _, _, _ = evaluate_loader(model, dl_val, device, criterion, num_feats=num_feats)
 
-        # scheduler step if used
+        # scheduler step (ReduceLROnPlateau monitors val_acc)
         if sched is not None:
-            sched.step(val_acc)
+            old_lr = opt.param_groups[0]['lr']
+            sched.step(val_loss)
+            new_lr = opt.param_groups[0]['lr']
+            if new_lr != old_lr:
+                print(f"[LR Scheduler] LR reduced from {old_lr:.6f} -> {new_lr:.6f}")
 
         # log
-        with open(curve_csv, "a", newline="", encoding="utf-8") as f:
+        with curve_csv.open("a", newline="", encoding="utf-8") as f:
             csv.writer(f).writerow([epoch, f"{train_loss:.6f}", f"{train_acc:.6f}", f"{val_loss:.6f}", f"{val_acc:.6f}"])
 
         # save best
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-            torch.save({"model": model.state_dict(), "val_acc": float(val_acc)}, best_ckpt)
+        if val_loss < best_val_loss + 1e-8:
+            best_val_loss = val_loss
+            best_epoch = epoch
+            epochs_no_improve = 0
+            torch.save({"model": model.state_dict(), "val_loss": float(val_loss)}, best_ckpt)
+        else:
+            epochs_no_improve += 1
+
+        # verbose epoch info
+        print(f"[Epoch {epoch}/{args.epochs}] train_loss={train_loss:.4f} train_acc={train_acc:.4f} val_loss={val_loss:.4f} val_acc={val_acc:.4f} best_val_acc={best_val_loss:.4f} epochs_no_improve={epochs_no_improve}")
+
+        # early stopping
+        if epochs_no_improve >= args.es_patience:
+            print(f"[early-stopping] no improvement for {epochs_no_improve} epochs (patience={args.es_patience}). Stopping at epoch {epoch}.")
+            break
 
     # final eval (load best)
     ckpt = torch.load(best_ckpt, map_location=device)
@@ -300,7 +314,8 @@ def run_experiment(cfg, args, PainCNN, TimeSeriesDataset, num_feats, labels_df, 
         "out_dir": str(out_dir),
         "val_acc": float(v_acc),
         "macro_f1": float(f1_macro),
-        "report": rep
+        "report": rep,
+        "best_epoch": int(best_epoch)
     }
 
 def main():
@@ -309,10 +324,15 @@ def main():
     parser.add_argument("--label_csv", type=str, default=str(ROOT_DIR / "data" / "pirate_pain_train_labels.csv"))
     parser.add_argument("--features_txt", type=str, default=str(ROOT_DIR / "data" / "features.txt"))
     parser.add_argument("--stats_json", type=str, default=str(ROOT_DIR / "data" / "stats.json"))
-    parser.add_argument("--out_root", type=str, default=str(ROOT_DIR / "outputs" / "model_runs_base"))
+    parser.add_argument("--out_root", type=str, default=str(ROOT_DIR / "outputs" / "model_runs_hp_light_A"))
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--normalize", action="store_true")
+    # Scheduler / early stopping args
+    parser.add_argument("--plateau_patience", type=int, default=3, help="ReduceLROnPlateau patience")
+    parser.add_argument("--es_patience", type=int, default=7, help="Early stopping patience (in epochs)")
+    parser.add_argument("--lr_factor", type=float, default=0.5, help="LR reduction factor on plateau")
+    parser.add_argument("--min_lr", type=float, default=1e-5, help="Minimum LR after reductions")
     args = parser.parse_args()
 
     Path(args.out_root).mkdir(parents=True, exist_ok=True)
@@ -337,16 +357,16 @@ def main():
     all_idx = np.arange(len(labels_df))
     train_idx = [int(i) for i in all_idx if group_ids[i] in train_set]
     val_idx = [int(i) for i in all_idx if group_ids[i] in val_set]
+    
 
     feats = read_features_txt(args.features_txt)
     num_feats = len(feats)
 
     # hyperparameter grid (you can edit)
-    lrs = [1e-3]
-    batch_sizes = [64]
-    dropouts = [0.2]
-    seeds = [args.seed, args.seed+1, args.seed+2, args.seed+3, args.seed+4, 
-             args.seed+5, args.seed+6, args.seed+7, args.seed+8, args.seed+9]
+    lrs = [1e-3, 1e-4, 1e-5]
+    batch_sizes = [16, 32, 64]
+    dropouts = [0.1, 0.2, 0.3, 0.4]
+    seeds = [args.seed, args.seed+1, args.seed+2]
 
     grid = list(product(lrs, batch_sizes, dropouts, seeds))
     print(f"[info] Running {len(grid)} experiments")
@@ -356,7 +376,7 @@ def main():
         cfg = {"lr": float(lr), "batch_size": int(bs), "dropout": float(drop), "seed": int(sd)}
         print(f"[exp] starting {cfg}")
         res = run_experiment(cfg, args, PainCNN, TimeSeriesDataset, num_feats, labels_df, train_idx, val_idx)
-        print(f"[exp] done -> out: {res['out_dir']} | val_acc={res['val_acc']:.4f} macro_f1={res['macro_f1']:.4f}")
+        print(f"[exp] done -> out: {res['out_dir']} | val_acc={res['val_acc']:.4f} macro_f1={res['macro_f1']:.4f} best_epoch={res.get('best_epoch', -1)}")
         results.append(res)
 
     # save global summary
